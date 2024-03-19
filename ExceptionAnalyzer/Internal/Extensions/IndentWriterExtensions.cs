@@ -1,6 +1,6 @@
 ﻿using System.CodeDom.Compiler;
 
-namespace ExceptionAnalyzer.Extensions;
+namespace ExceptionAnalyzer.Internal.Extensions;
 
 public static class IndentWriterExtensions
 {

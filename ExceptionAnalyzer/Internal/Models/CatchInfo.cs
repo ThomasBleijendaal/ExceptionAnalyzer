@@ -1,4 +1,4 @@
-﻿namespace ExceptionAnalyzer;
+﻿namespace ExceptionAnalyzer.Internal.Models;
 
 internal class CatchInfo
 {

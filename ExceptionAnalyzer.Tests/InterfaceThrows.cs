@@ -85,7 +85,7 @@ namespace A {
     public class B {
         [AddExceptions]
         public void Method() {
-            I x = new C();
+            I x = new C1();
             x.Throw();
         }
     }

@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace ExceptionAnalyzer;
+namespace ExceptionAnalyzer.Internal;
 
 internal sealed class MethodReceiver : ISyntaxReceiver
 {

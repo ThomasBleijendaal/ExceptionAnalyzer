@@ -1,9 +1,10 @@
 ﻿using System.CodeDom.Compiler;
 using System.Text;
-using ExceptionAnalyzer.Extensions;
+using ExceptionAnalyzer.Internal.Extensions;
+using ExceptionAnalyzer.Internal.Models;
 using Microsoft.CodeAnalysis.Text;
 
-namespace ExceptionAnalyzer;
+namespace ExceptionAnalyzer.Internal;
 
 internal sealed class SourceBuilder
 {

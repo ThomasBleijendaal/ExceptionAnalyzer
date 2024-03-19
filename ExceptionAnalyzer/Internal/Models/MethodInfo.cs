@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace ExceptionAnalyzer;
+namespace ExceptionAnalyzer.Internal.Models;
 
 internal class MethodInfo
 {

@@ -1,4 +1,6 @@
-﻿namespace ExceptionAnalyzer;
+﻿using ExceptionAnalyzer.Internal.Models;
+
+namespace ExceptionAnalyzer.Internal.Helpers;
 
 internal static class ExceptionInfoHelper
 {

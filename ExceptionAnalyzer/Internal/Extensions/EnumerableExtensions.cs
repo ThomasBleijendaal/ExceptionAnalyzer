@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace ExceptionAnalyzer.Extensions;
+namespace ExceptionAnalyzer.Internal.Extensions;
 
 internal static class EnumerableExtensions
 {
