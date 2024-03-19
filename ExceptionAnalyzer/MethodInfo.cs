@@ -18,4 +18,5 @@ internal class MethodInfo
     public BlockInfo Block { get; }
 
     public bool HasAnnotation { get; set; }
+    public bool IsInterfaceMethod { get; set; }
 }

@@ -126,6 +126,7 @@ namespace A
 ");
     }
 
+    // TODO: determine whether this test makes sense - should it also return NullReferenceException?
     [Test]
     public void ThrowFromNestedCatchWithImpossibleException()
     {

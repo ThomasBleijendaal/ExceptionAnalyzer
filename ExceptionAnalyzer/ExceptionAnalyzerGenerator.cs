@@ -9,18 +9,21 @@ namespace ExceptionAnalyzer;
 /*
  * TODOs
  * 
- * - Support overloads
+ * V Support overloads
  * - Support generic overloads
  * V Support lambdas
  * 1/2 Support properties
  * V Support local functions
  * - Support class method calls
- * -- Overloads
+ * -V Overloads
  * -- Properties on classes
  * -- Nested classes
  * - Support interface method calls
- * -- Overloads
+ * -V Overloads
+ * -V Multiple implementors
  * -- Properties on interfaces
+ * -- Implicitly defined method calls
+ * -- Handle stuff like IDisposable method call that will trigger too many exceptions
  * - Support exception origin detection
  * - Support output the reason of the exception (a la stack trace)
  * - Exception hierarchies
@@ -32,6 +35,8 @@ namespace ExceptionAnalyzer;
  * - Create a class somewhere with a partial method
  * - Populate that partial method with the exception data
  * - Allow using this method in like DocumentFilters for OpenApi stuff
+ * - Make stuff structs and lower memory pressure
+ * - Make parsing enabled by build flag so it only tanks performance when wanted
  */
 
 [Generator]
@@ -41,15 +46,19 @@ public class ExceptionAnalyzerGenerator : ISourceGenerator
     {
         if (context.SyntaxReceiver is MethodReceiver receiver)
         {
-            var foundProperties = receiver.PropertyCandidates.SelectMany(x => ParseProperty(context, x)).OfType<MethodInfo>().ToList();
+            var parser = new DeclarationParser(context, receiver);
 
-            var foundMethods = receiver.MethodCandidates.Select(x => ParseMethod(context, receiver, x)).OfType<MethodInfo>().ToList();
+            var foundProperties = receiver.PropertyCandidates.SelectMany(parser.ParseProperty).OfType<MethodInfo>().ToList();
+
+            var foundMethods = receiver.MethodCandidates.Select(parser.ParseMethod).OfType<MethodInfo>().ToList();
 
             var referenceData = foundProperties.Concat(foundMethods).ToList();
 
+            var realizer = new HierarchyRealizer(referenceData);
+
             var filteredMethods = foundMethods
                 .Where(x => x.HasAnnotation)
-                .Select(x => RealizeMethodCalls(x, referenceData))
+                .Select(realizer.RealizeMethodCalls)
                 .Where(x => x.Block.ThrownExceptions.Count > 0)
                 .ToList();
 
@@ -62,8 +71,33 @@ public class ExceptionAnalyzerGenerator : ISourceGenerator
         }
     }
 
-    // TODO: move to parser class
-    private static IEnumerable<MethodInfo> ParseProperty(GeneratorExecutionContext context, PropertyDeclarationSyntax candidate)
+    public void Initialize(GeneratorInitializationContext context)
+    {
+        context.RegisterForSyntaxNotifications(() => new MethodReceiver());
+
+        //#if DEBUG
+        //        if (!Debugger.IsAttached)
+        //        {
+        //            Debugger.Launch();
+        //        }
+        //#endif
+    }
+}
+
+internal sealed class DeclarationParser
+{
+    private readonly GeneratorExecutionContext _context;
+    private readonly MethodReceiver _receiver;
+
+    public DeclarationParser(
+        GeneratorExecutionContext context,
+        MethodReceiver receiver)
+    {
+        _context = context;
+        _receiver = receiver;
+    }
+
+    public IEnumerable<MethodInfo> ParseProperty(PropertyDeclarationSyntax candidate)
     {
         if (candidate.AccessorList != null)
         {
@@ -71,14 +105,14 @@ public class ExceptionAnalyzerGenerator : ISourceGenerator
             {
                 if (accessor.Body != null || accessor.ExpressionBody != null)
                 {
-                    var visitor = new ThrowExceptionVisitor(context.Compilation);
+                    var visitor = new ThrowExceptionVisitor(_context.Compilation);
 
                     accessor.Body?.Accept(visitor);
                     accessor.ExpressionBody?.Accept(visitor);
 
                     var info = visitor.Blocks.Pop();
 
-                    var model = context.Compilation.GetSemanticModel(candidate.SyntaxTree);
+                    var model = _context.Compilation.GetSemanticModel(candidate.SyntaxTree);
                     var type = model.GetDeclaredSymbol(candidate);
 
                     if (type != null)
@@ -97,49 +131,69 @@ public class ExceptionAnalyzerGenerator : ISourceGenerator
         }
     }
 
-    private static MethodInfo? ParseMethod(GeneratorExecutionContext context, MethodReceiver receiver, MethodDeclarationSyntax candidate)
+    public MethodInfo? ParseMethod(MethodDeclarationSyntax candidate)
     {
+        BlockInfo blockInfo;
+
         if (candidate.Body != null)
         {
-            var visitor = new ThrowExceptionVisitor(context.Compilation);
+            var visitor = new ThrowExceptionVisitor(_context.Compilation);
             candidate.Body.Accept(visitor);
 
-            var info = visitor.Blocks.Pop();
+            blockInfo = visitor.Blocks.Pop();
+        }
+        else
+        {
+            blockInfo = new();
+        }
 
-            var model = context.Compilation.GetSemanticModel(candidate.SyntaxTree);
-            var type = model.GetDeclaredSymbol(candidate);
+        var model = _context.Compilation.GetSemanticModel(candidate.SyntaxTree);
+        var type = model.GetDeclaredSymbol(candidate);
 
-            if (type != null)
+        if (type != null)
+        {
+            var methodInfo = new MethodInfo(
+                type.ContainingSymbol,
+                type.Name,
+                type.Parameters.Select(x => x.Type).ToArray(),
+                blockInfo)
             {
-                var methodInfo = new MethodInfo(
-                    type.ContainingSymbol,
-                    type.Name,
-                    type.Parameters.Select(x => x.Type).ToArray(),
-                    info)
-                {
-                    HasAnnotation = receiver.AttributedMethodCandidates.Contains(candidate)
-                };
+                HasAnnotation = _receiver.AttributedMethodCandidates.Contains(candidate),
+                IsInterfaceMethod = candidate.Body == null
+            };
 
-                return methodInfo;
-            }
+            return methodInfo;
         }
 
         return null;
     }
+}
 
-    // TODO: move to realizer class
-    private static MethodInfo RealizeMethodCalls(MethodInfo methodInfo, IReadOnlyList<MethodInfo> methodInfos)
+// TODO: name can be better
+internal sealed class HierarchyRealizer
+{
+    private readonly IReadOnlyList<MethodInfo> _methodInfos;
+
+    private readonly IReadOnlyList<InterfaceMethodInfo> _interfaceMethodInfos;
+
+    public HierarchyRealizer(IReadOnlyList<MethodInfo> methodInfos)
     {
-        var resolvedMethodCalls = new MethodInfo(methodInfo.Symbol, methodInfo.MethodName, methodInfo.ArgumentTypes, RealizeMethodCalls(methodInfo, methodInfo.Block, methodInfos));
+        _methodInfos = methodInfos;
+        _interfaceMethodInfos = CalculateInterfaceMethods();
+    }
+
+    public MethodInfo RealizeMethodCalls(MethodInfo methodInfo)
+    {
+        var resolvedMethodCalls = new MethodInfo(methodInfo.Symbol, methodInfo.MethodName, methodInfo.ArgumentTypes, RealizeMethodCalls(methodInfo, methodInfo.Block));
 
         return MethodInfoHelper.Flatten(resolvedMethodCalls);
     }
 
-    private static BlockInfo RealizeMethodCalls(MethodInfo methodInfo, BlockInfo blockInfo, IReadOnlyList<MethodInfo> methodInfos)
+    private BlockInfo RealizeMethodCalls(MethodInfo methodInfo, BlockInfo blockInfo)
     {
-        var catchInfos = blockInfo.CatchInfos.Select(@catch => RealizeMethodCalls(methodInfo, @catch, methodInfos)).ToList();
+        var catchInfos = blockInfo.CatchInfos.Select(@catch => RealizeMethodCalls(methodInfo, @catch)).ToList();
 
-        var blockInfos = blockInfo.Blocks.Select(block => RealizeMethodCalls(methodInfo, block, methodInfos)).ToList();
+        var blockInfos = blockInfo.Blocks.Select(block => RealizeMethodCalls(methodInfo, block)).ToList();
 
         foreach (var call in blockInfo.MethodCalls)
         {
@@ -147,37 +201,57 @@ public class ExceptionAnalyzerGenerator : ISourceGenerator
             var symbol = call.Symbol ?? methodInfo.Symbol;
             var methodName = call.MethodName;
 
-            var foundInfo = methodInfos.FirstOrDefault(x =>
+            var foundInfo = _methodInfos.FirstOrDefault(x =>
                 SymbolEqualityComparer.Default.Equals(x.Symbol, symbol) &&
                 x.MethodName == methodName &&
                 x.ArgumentTypes.AreEqual(call.ArgumentTypes));
 
             if (foundInfo != null)
             {
-                var flattened = RealizeMethodCalls(foundInfo, foundInfo.Block, methodInfos);
-
-                blockInfos.Add(flattened);
+                if (!foundInfo.IsInterfaceMethod)
+                {
+                    var flattened = RealizeMethodCalls(foundInfo, foundInfo.Block);
+                    blockInfos.Add(flattened);
+                }
+                else
+                {
+                    var interfaceMethod = _interfaceMethodInfos.FirstOrDefault(x => x.Method == foundInfo);
+                    if (interfaceMethod != null)
+                    {
+                        foreach (var implementorInfo in interfaceMethod.Implementors)
+                        {
+                            var flattened = RealizeMethodCalls(implementorInfo, implementorInfo.Block);
+                            blockInfos.Add(flattened);
+                        }
+                    }
+                }
             }
         }
 
         return new BlockInfo(blockInfo.ThrownExceptions, blockInfos, catchInfos);
     }
 
-    private static CatchInfo RealizeMethodCalls(MethodInfo methodInfo, CatchInfo @catch, IReadOnlyList<MethodInfo> methodInfos)
+    private CatchInfo RealizeMethodCalls(MethodInfo methodInfo, CatchInfo @catch)
     {
-        return new CatchInfo(@catch.CaughtException, RealizeMethodCalls(methodInfo, @catch.Block, methodInfos));
+        return new CatchInfo(@catch.CaughtException, RealizeMethodCalls(methodInfo, @catch.Block));
     }
 
-    public void Initialize(GeneratorInitializationContext context)
+    private IReadOnlyList<InterfaceMethodInfo> CalculateInterfaceMethods()
     {
-        context.RegisterForSyntaxNotifications(() => new MethodReceiver());
+        var methods = new List<InterfaceMethodInfo>();
 
-        //#if DEBUG
-        //        if (!Debugger.IsAttached)
-        //        {
-        //            Debugger.Launch();
-        //        }
-        //#endif
+        foreach (var interfaceMethod in _methodInfos.Where(x => x.IsInterfaceMethod))
+        {
+            var implementors = _methodInfos.Where(method =>
+                method.Symbol is ITypeSymbol type &&
+                type.Interfaces.Any(@interface => SymbolEqualityComparer.Default.Equals(@interface, interfaceMethod.Symbol)) &&
+                interfaceMethod.MethodName == method.MethodName &&
+                interfaceMethod.ArgumentTypes.AreEqual(method.ArgumentTypes)).ToArray();
+
+            methods.Add(new InterfaceMethodInfo(interfaceMethod, implementors));
+        }
+
+        return methods;
     }
 }
 
