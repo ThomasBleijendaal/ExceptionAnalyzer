@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Thomas Bleijendaal</Authors>
+    <Company>Thomas Bleijendaal</Company>
+    <Product>Generated Mapper</Product>
+    <Description>Exception analyzer that finds all thrown exceptions for attributed methods and their dependencies</Description>
+    <PackageProjectUrl>https://github.com/ThomasBleijendaal/Faultr</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ThomasBleijendaal/Faultr</RepositoryUrl>
+    <RepositoryType>Github</RepositoryType>
+    <PackageTags>C# compile-time exception analyzer</PackageTags>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <PackageVersion>$(PackageVersion)</PackageVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.1" PrivateAssets="all">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Faultr.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
