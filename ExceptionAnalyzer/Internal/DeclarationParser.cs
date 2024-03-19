@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using ExceptionAnalyzer.Internal.Models;
+﻿using ExceptionAnalyzer.Internal.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;

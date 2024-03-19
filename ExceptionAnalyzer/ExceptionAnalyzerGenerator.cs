@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using ExceptionAnalyzer.Internal;
+﻿using ExceptionAnalyzer.Internal;
 using ExceptionAnalyzer.Internal.Models;
 using Microsoft.CodeAnalysis;
 
@@ -26,7 +25,7 @@ namespace ExceptionAnalyzer;
  * - Support exception origin detection
  * - Support output the reason of the exception (a la stack trace)
  * - Exception hierarchies
- * - Export all exception details
+ * - Export all exception details (initializer etc)
  * 
  * 
  * PLAN
@@ -48,7 +47,6 @@ public class ExceptionAnalyzerGenerator : ISourceGenerator
             var parser = new DeclarationParser(context, receiver);
 
             var foundProperties = receiver.PropertyCandidates.SelectMany(parser.ParseProperty).OfType<MethodInfo>().ToList();
-
             var foundMethods = receiver.MethodCandidates.Select(parser.ParseMethod).OfType<MethodInfo>().ToList();
 
             var referenceData = foundProperties.Concat(foundMethods).ToList();
@@ -81,17 +79,4 @@ public class ExceptionAnalyzerGenerator : ISourceGenerator
         //        }
         //#endif
     }
-}
-
-internal class ExceptionInfo
-{
-    public const string All = "*";
-
-    // TODO: this misses namespace
-    public ExceptionInfo(string typeName)
-    {
-        TypeName = typeName ?? throw new ArgumentNullException(nameof(typeName));
-    }
-
-    public string TypeName { get; set; }
 }

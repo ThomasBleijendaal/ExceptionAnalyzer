@@ -1,4 +1,5 @@
 ﻿using ExceptionAnalyzer.Internal.Models;
+using Microsoft.CodeAnalysis;
 
 namespace ExceptionAnalyzer.Internal.Helpers;
 
@@ -8,7 +9,7 @@ internal static class ExceptionInfoHelper
     {
         foreach (var thrownException in thrownExceptions)
         {
-            if (thrownException.TypeName == ExceptionInfo.All)
+            if (thrownException == ExceptionInfo.All)
             {
                 yield return originalThrownException;
             }
@@ -28,15 +29,16 @@ internal static class ExceptionInfoHelper
             foreach (var @catch in catches)
             {
                 // this logic is too simplistic (missing exception hierarchies + filter clauses)
-                if (@catch.CaughtException.TypeName == thrownException.TypeName ||
-                    @catch.CaughtException.TypeName == "Exception" ||
-                    @catch.CaughtException.TypeName == ExceptionInfo.All)
+                if (SymbolEqualityComparer.Default.Equals(@catch.CaughtException.Type, thrownException.Type) ||
+                    // TODO: restore
+                    //@catch.CaughtException.TypeName == "Exception" ||
+                    @catch.CaughtException == ExceptionInfo.All)
                 {
                     caught = true;
 
                     foreach (var retrownException in Combine(@catch.Block.ThrownExceptions, thrownException))
                     {
-                        if (@catch.CaughtException.TypeName == ExceptionInfo.All)
+                        if (@catch.CaughtException == ExceptionInfo.All)
                         {
                             yield return thrownException;
                         }

@@ -50,7 +50,7 @@ internal sealed class ThrowExceptionVisitor : CSharpSyntaxWalker
             caughtException = exception;
         }
 
-        caughtException ??= new ExceptionInfo(ExceptionInfo.All);
+        caughtException ??= ExceptionInfo.All;
 
         Blocks.Push(new());
 
@@ -75,7 +75,7 @@ internal sealed class ThrowExceptionVisitor : CSharpSyntaxWalker
     {
         if (node.Expression == null)
         {
-            Blocks.Peek().ThrownExceptions.Add(new ExceptionInfo(ExceptionInfo.All));
+            Blocks.Peek().ThrownExceptions.Add(ExceptionInfo.All);
         }
         else
         {
@@ -152,10 +152,15 @@ internal sealed class ThrowExceptionVisitor : CSharpSyntaxWalker
 
     private void ParseObjectCreationExpression(ExpressionSyntax? expression)
     {
-        if (expression is ObjectCreationExpressionSyntax createExceptionStatement &&
-            createExceptionStatement.Type is IdentifierNameSyntax identifierName)
+        if (expression is ObjectCreationExpressionSyntax createExceptionStatement)
         {
-            Blocks.Peek().ThrownExceptions.Add(new ExceptionInfo(identifierName.Identifier.Text));
+            var model = _compilation.GetSemanticModel(createExceptionStatement.SyntaxTree);
+            var type = model.GetTypeInfo(createExceptionStatement);
+
+            if (type.Type != null)
+            {
+                Blocks.Peek().ThrownExceptions.Add(new ExceptionInfo(type.Type, createExceptionStatement.ToString()));
+            }
         }
     }
 
@@ -176,7 +181,7 @@ internal sealed class ThrowExceptionVisitor : CSharpSyntaxWalker
 
             if (type.Type != null)
             {
-                return new ExceptionInfo(type.Type.Name);
+                return new ExceptionInfo(type.Type, null);
             }
         }
 

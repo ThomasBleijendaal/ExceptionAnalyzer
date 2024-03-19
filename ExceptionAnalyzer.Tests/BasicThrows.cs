@@ -19,11 +19,21 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
+@"namespace ExceptionAnalyzer
 {
-    // B.Method throws Exception
+    public partial class Exceptions
+    {
+        partial void SetThrownExceptions()
+        {
+            Methods = new[]
+            {
+                new MethodExceptionInfo(typeof(A.B), ""Method"", new[]
+                {
+                    new ThrownExceptionInfo(typeof(System.Exception), new System.Exception()),
+                })
+            };
+        }
+    }
 }
 ");
     }
