@@ -9,7 +9,7 @@ public class PropertyCallThrows
     public void ThrowGet()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -21,20 +21,15 @@ namespace A {
         private string Value { get => throw new NotSupportedException(); }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws NotSupportedException
-}
-");
+CodeHelper.CreateException(1, "NotSupportedException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.NotSupportedException"));
     }
 
     [Test]
     public void ThrowSet()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -46,12 +41,7 @@ namespace A {
         private string Value { set => throw new NotSupportedException(); }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws NotSupportedException
-}
-");
+CodeHelper.CreateException(1, "NotSupportedException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.NotSupportedException"));
     }
 }

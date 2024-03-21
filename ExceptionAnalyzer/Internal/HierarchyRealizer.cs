@@ -79,8 +79,8 @@ internal sealed class HierarchyRealizer
         foreach (var interfaceMethod in _methodInfos.Where(x => x.IsInterfaceMethod))
         {
             var implementors = _methodInfos.Where(method =>
-                method.Symbol is ITypeSymbol type &&
-                type.Interfaces.Any(@interface => SymbolEqualityComparer.Default.Equals(@interface, interfaceMethod.Symbol)) &&
+                method.Symbol is INamedTypeSymbol type &&
+                GetAllInterfaces(type).Any(@interface => SymbolEqualityComparer.Default.Equals(@interface, interfaceMethod.Symbol)) &&
                 interfaceMethod.MethodName == method.MethodName &&
                 interfaceMethod.ArgumentTypes.AreEqual(method.ArgumentTypes)).ToArray();
 
@@ -88,5 +88,18 @@ internal sealed class HierarchyRealizer
         }
 
         return methods;
+    }
+
+    private IEnumerable<INamedTypeSymbol> GetAllInterfaces(INamedTypeSymbol symbol)
+    {
+        foreach (var @interface in symbol.Interfaces)
+        {
+            yield return @interface;
+
+            foreach (var @interfaceInterface in GetAllInterfaces(@interface))
+            {
+                yield return interfaceInterface;
+            }
+        }
     }
 }

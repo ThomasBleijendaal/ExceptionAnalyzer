@@ -18,12 +18,9 @@ internal sealed class MethodReceiver : ISyntaxReceiver
             if (methodDeclaration.AttributeLists.Any(x => x.Attributes.Any(y => y.Name.ToString().Contains("AddExceptions"))))
             {
                 AttributedMethodCandidates.Add(methodDeclaration);
-                MethodCandidates.Add(methodDeclaration);
             }
-            else
-            {
-                MethodCandidates.Add(methodDeclaration);
-            }
+
+            MethodCandidates.Add(methodDeclaration);
         }
 
         if (syntaxNode is PropertyDeclarationSyntax propertyDeclaration)

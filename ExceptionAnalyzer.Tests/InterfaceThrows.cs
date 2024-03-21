@@ -9,7 +9,7 @@ public class InterfaceThrows
     public void Throw()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -29,20 +29,15 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws NotSupportedException
-}
-");
+CodeHelper.CreateException(1, "NotSupportedException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.NotSupportedException"));
     }
 
     [Test]
     public void ThrowOverload()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -66,20 +61,15 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws InvalidOperationException
-}
-");
+CodeHelper.CreateException(1, "InvalidOperationException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.InvalidOperationException"));
     }
 
     [Test]
     public void ThrowMultipleImplementations()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -109,12 +99,9 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws InvalidOperationException, NotSupportedException, ArgumentException
-}
-");
+CodeHelper.CreateException(1, "InvalidOperationException"),
+CodeHelper.CreateException(2, "NotSupportedException"),
+CodeHelper.CreateException(3, "ArgumentException"),
+CodeHelper.CreateMethodExceptions(exceptions: new[] { "System.InvalidOperationException", "System.NotSupportedException", "System.ArgumentException" }));
     }
 }

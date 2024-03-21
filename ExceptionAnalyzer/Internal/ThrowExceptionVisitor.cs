@@ -16,17 +16,9 @@ internal sealed class ThrowExceptionVisitor : CSharpSyntaxWalker
 
     public ThrowExceptionVisitor(Compilation compilation)
     {
-        Console.WriteLine("-----------");
-
         _compilation = compilation;
+
         Blocks.Push(new());
-    }
-
-    public override void Visit(SyntaxNode? node)
-    {
-        Console.WriteLine(node.GetType().Name);
-
-        base.Visit(node);
     }
 
     public override void VisitTryStatement(TryStatementSyntax node)
@@ -154,12 +146,18 @@ internal sealed class ThrowExceptionVisitor : CSharpSyntaxWalker
     {
         if (expression is ObjectCreationExpressionSyntax createExceptionStatement)
         {
+            var usingVisitor = new UsingDirectiveVisitor();
+
+            var root = createExceptionStatement.SyntaxTree.GetCompilationUnitRoot();
+
+            root.Accept(usingVisitor);
+
             var model = _compilation.GetSemanticModel(createExceptionStatement.SyntaxTree);
             var type = model.GetTypeInfo(createExceptionStatement);
 
             if (type.Type != null)
             {
-                Blocks.Peek().ThrownExceptions.Add(new ExceptionInfo(type.Type, createExceptionStatement.ToString()));
+                Blocks.Peek().ThrownExceptions.Add(new ExceptionInfo(type.Type, createExceptionStatement.ToString(), usingVisitor.NamespacesDirectives));
             }
         }
     }
@@ -181,7 +179,7 @@ internal sealed class ThrowExceptionVisitor : CSharpSyntaxWalker
 
             if (type.Type != null)
             {
-                return new ExceptionInfo(type.Type, null);
+                return new ExceptionInfo(type.Type, null, null);
             }
         }
 

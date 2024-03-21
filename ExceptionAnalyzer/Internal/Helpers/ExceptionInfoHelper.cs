@@ -22,25 +22,24 @@ internal static class ExceptionInfoHelper
 
     public static IEnumerable<ExceptionInfo> Combine(IEnumerable<ExceptionInfo> thrownExceptions, IEnumerable<CatchInfo> catches)
     {
-        foreach (var thrownException in thrownExceptions)
+        var caughtExceptions = catches
+            .Select(@catch => (@catch,
+                exceptions: thrownExceptions.Where(exception => CatchesException(@catch, exception)).ToArray()))
+            .ToArray();
+
+        var uncaughtExceptions = thrownExceptions.Except(caughtExceptions.SelectMany(x => x.exceptions));
+
+        foreach (var (@catch, exceptions) in caughtExceptions)
         {
-            var caught = false;
-
-            foreach (var @catch in catches)
+            if (exceptions.Length > 0)
             {
-                // this logic is too simplistic (missing exception hierarchies + filter clauses)
-                if (SymbolEqualityComparer.Default.Equals(@catch.CaughtException.Type, thrownException.Type) ||
-                    // TODO: restore
-                    //@catch.CaughtException.TypeName == "Exception" ||
-                    @catch.CaughtException == ExceptionInfo.All)
+                foreach (var exception in exceptions)
                 {
-                    caught = true;
-
-                    foreach (var retrownException in Combine(@catch.Block.ThrownExceptions, thrownException))
+                    foreach (var retrownException in Combine(@catch.Block.ThrownExceptions, exception))
                     {
                         if (@catch.CaughtException == ExceptionInfo.All)
                         {
-                            yield return thrownException;
+                            yield return exception;
                         }
                         else
                         {
@@ -49,10 +48,56 @@ internal static class ExceptionInfoHelper
                     }
                 }
             }
-
-            if (!caught)
+            else // TODO: missing feature flag
             {
-                yield return thrownException;
+                foreach (var thrownException in @catch.Block.ThrownExceptions)
+                {
+                    if (thrownException == ExceptionInfo.All)
+                    {
+                        yield return @catch.CaughtException;
+                    }
+                    else
+                    {
+                        yield return thrownException;
+                    }
+                }
+            }
+        }
+
+        foreach (var exception in uncaughtExceptions)
+        {
+            yield return exception;
+        }
+    }
+
+    public static bool CatchesException(CatchInfo @catch, ExceptionInfo exception)
+    {
+        // this logic is too simplistic (missing exception hierarchies + when filter clauses)
+
+        if (@catch.CaughtException == ExceptionInfo.All ||
+            SymbolEqualityComparer.Default.Equals(@catch.CaughtException.Type, exception.Type))
+        {
+            return true;
+        }
+
+        return GetAllTypes(exception.Type).Any(baseType =>
+            SymbolEqualityComparer.Default.Equals(@catch.CaughtException.Type, baseType));
+    }
+
+    private static IEnumerable<ITypeSymbol> GetAllTypes(ITypeSymbol? type)
+    {
+        if (type == null)
+        {
+            yield break;
+        }
+
+        yield return type;
+
+        if (type.BaseType != null)
+        {
+            foreach (var baseType in GetAllTypes(type.BaseType))
+            {
+                yield return baseType;
             }
         }
     }

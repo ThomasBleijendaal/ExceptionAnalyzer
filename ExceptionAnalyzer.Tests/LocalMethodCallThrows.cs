@@ -9,7 +9,7 @@ public class LocalMethodCallThrows
     public void ThrowFunction()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -21,20 +21,15 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws NotSupportedException
-}
-");
+CodeHelper.CreateException(1, "NotSupportedException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.NotSupportedException"));
     }
 
     [Test]
     public void ThrowStaticFunction()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -46,20 +41,15 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws NotSupportedException
-}
-");
+CodeHelper.CreateException(1, "NotSupportedException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.NotSupportedException"));
     }
 
     [Test]
     public void ThrowLambda()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -71,12 +61,7 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws NotSupportedException
-}
-");
+CodeHelper.CreateException(1, "NotSupportedException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.NotSupportedException"));
     }
 }

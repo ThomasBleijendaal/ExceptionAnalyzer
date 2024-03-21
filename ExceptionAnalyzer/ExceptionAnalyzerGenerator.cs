@@ -22,11 +22,13 @@ namespace ExceptionAnalyzer;
  * -- Properties on interfaces
  * -- Implicitly defined method calls
  * -- Handle stuff like IDisposable method call that will trigger too many exceptions
+ * -- Interfaces on interfaces
  * - Support exception origin detection
- * - Support output the reason of the exception (a la stack trace)
+ * - Support output the reason of the exception (a la stack trace - but then explain where exception came from)
  * - Exception hierarchies
  * - Export all exception details (initializer etc)
- * 
+ * - Fallback when exception creation uses variable (just insert default / null)
+ * - Global usings
  * 
  * PLAN
  * 

@@ -8,57 +8,91 @@ namespace ExceptionAnalyzer.Internal;
 
 internal sealed class SourceBuilder
 {
-    private readonly IEnumerable<MethodInfo> _methods;
+    private readonly IReadOnlyList<MethodInfo> _methods;
 
-    public SourceBuilder(IEnumerable<MethodInfo> methods)
+    public SourceBuilder(IReadOnlyList<MethodInfo> methods)
     {
         _methods = methods;
     }
 
     public IEnumerable<(string, SourceText)> GenerateSourceText()
     {
-        foreach (var method in _methods)
+        if (_methods.Count == 0)
         {
-            using var writer = new StringWriter();
-            using var indentWriter = new IndentedTextWriter(writer, "    ");
+            yield break;
+        }
 
-            //indentWriter.WriteLine("using System;");
-            //indentWriter.WriteLine();
-            //indentWriter.WriteLine($"namespace {method.Symbol.ContainingNamespace.Name}");
-            //using (indentWriter.Braces())
-            //{
-            //    indentWriter.WriteLine($"// {method.Symbol.Name}.{method.MethodName} throws {string.Join(", ", method.Block.ThrownExceptions.Select(x => x.Type?.Name))}");
-            //}
+        var i = 0;
 
-            indentWriter.WriteLine($"namespace {nameof(ExceptionAnalyzer)}");
+        using var writer = new StringWriter();
+        using var indentWriter = new IndentedTextWriter(writer, "    ");
+
+        indentWriter.WriteLine($"namespace {nameof(ExceptionAnalyzer)}");
+        using (indentWriter.Braces())
+        {
+            indentWriter.WriteLine($"public partial class {nameof(Exceptions)}");
             using (indentWriter.Braces())
             {
-                indentWriter.WriteLine($"public partial class {nameof(Exceptions)}");
+                indentWriter.WriteLine($"partial void SetThrownExceptions()");
                 using (indentWriter.Braces())
                 {
-                    indentWriter.WriteLine($"partial void SetThrownExceptions()");
-                    using (indentWriter.Braces())
+                    indentWriter.WriteLine($"Methods = new[]");
+                    using (indentWriter.BracesWithSemiColon())
                     {
-                        indentWriter.WriteLine($"Methods = new[]");
-                        using (indentWriter.Braces())
+                        foreach (var method in _methods)
                         {
                             indentWriter.Write($"new MethodExceptionInfo(");
-                            indentWriter.Write($"typeof({method.Symbol.ContainingNamespace}.{method.Symbol.Name}), ");
+                            indentWriter.Write($"typeof({method.Symbol.ToDisplayString()}), ");
                             indentWriter.WriteLine($"\"{method.MethodName}\", new[]");
-                            using (indentWriter.Braces())
+                            using (indentWriter.BracesWithComma())
                             {
                                 foreach (var exception in method.Block.ThrownExceptions.Where(x => x.Type != null))
                                 {
                                     indentWriter.Write($"new ThrownExceptionInfo(");
-                                    indentWriter.Write($"typeof({exception.Type!.ContainingNamespace}.{exception.Type.Name}), ");
-                                    if (!string.IsNullOrEmpty(exception.ExceptionCreation))
+                                    indentWriter.Write($"typeof({exception.Type!.ToDisplayString()}), ");
+                                    if (string.IsNullOrEmpty(exception.ExceptionCreation))
                                     {
-                                        indentWriter.Write(exception.ExceptionCreation);
-                                        indentWriter.WriteLine("),");
+                                        indentWriter.WriteLine("null),");
                                     }
                                     else
                                     {
-                                        indentWriter.WriteLine("null),");
+                                        ++i;
+
+                                        var exceptionName = $"Exception{i}";
+
+                                        indentWriter.WriteLine($"{nameof(ExceptionAnalyzer)}.{exceptionName}.ExceptionCreator.Create()),");
+
+                                        using var exceptionWriter = new StringWriter();
+                                        using var exceptionIndentWriter = new IndentedTextWriter(exceptionWriter, "    ");
+
+                                        if (exception.UsingDirectives != null)
+                                        {
+                                            foreach (var @using in exception.UsingDirectives)
+                                            {
+                                                exceptionIndentWriter.WriteLine(@using);
+                                            }
+                                        }
+
+                                        exceptionIndentWriter.WriteLine($"using {method.Symbol.ContainingNamespace.ToDisplayString()};");
+                                        exceptionIndentWriter.WriteLine();
+
+                                        exceptionIndentWriter.WriteLine($"namespace {nameof(ExceptionAnalyzer)}.{exceptionName}");
+                                        using (exceptionIndentWriter.Braces())
+                                        {
+                                            exceptionIndentWriter.WriteLine("public static class ExceptionCreator");
+                                            using (exceptionIndentWriter.Braces())
+                                            {
+                                                exceptionIndentWriter.WriteLine("public static Exception Create()");
+                                                using (exceptionIndentWriter.Braces())
+                                                {
+                                                    exceptionIndentWriter.Write("return ");
+                                                    exceptionIndentWriter.Write(exception.ExceptionCreation);
+                                                    exceptionIndentWriter.WriteLine(";");
+                                                }
+                                            }
+                                        }
+
+                                        yield return ($"ExceptionAnalyzer.Exceptions.{i}.g.cs", SourceText.From(exceptionWriter.ToString(), Encoding.UTF8));
                                     }
                                 }
                             }
@@ -66,8 +100,8 @@ internal sealed class SourceBuilder
                     }
                 }
             }
-
-            yield return ($"{method.Symbol.ContainingNamespace.Name}.{method.Symbol.Name}.{method.MethodName}.g.cs", SourceText.From(writer.ToString(), Encoding.UTF8));
         }
+
+        yield return ($"ExceptionAnalyzer.Exceptions.g.cs", SourceText.From(writer.ToString(), Encoding.UTF8));
     }
 }

@@ -9,7 +9,7 @@ public class MethodCallThrows
     public void Throw()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -23,20 +23,15 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws Exception
-}
-");
+CodeHelper.CreateException(1, "Exception"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.Exception"));
     }
 
     [Test]
     public void ThrowOverload()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -54,20 +49,15 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws InvalidOperationException
-}
-");
+CodeHelper.CreateException(1, "InvalidOperationException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.InvalidOperationException"));
     }
 
     [Test]
     public void ThrowFromNestedMethod()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -85,20 +75,15 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws Exception
-}
-");
+CodeHelper.CreateException(1, "Exception"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.Exception"));
     }
 
     [Test]
     public void ThrowFromCatch()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -117,21 +102,15 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws InvalidOperationException
-}
-");
+CodeHelper.CreateException(1, "InvalidOperationException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.InvalidOperationException"));
     }
 
-    // TODO: determine whether this test makes sense - should it also return NullReferenceException?
     [Test]
-    public void ThrowFromNestedCatchWithImpossibleException()
+    public void ThrowFromNestedCatch()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -141,7 +120,7 @@ namespace A {
                 try {
                     SomeMethod();
                 }
-                catch (NotSupportedException ex) {
+                catch (InvalidOperationException ex) {
                     throw new NullReferenceException();
                 }
             }
@@ -155,49 +134,7 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws InvalidOperationException
-}
-");
-    }
-
-    [Test]
-    public void ThrowFromNestedCatch()
-    {
-        GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
-
-namespace A {
-    public class B {
-        [AddExceptions]
-        public void Method() {
-            try {
-                try {
-                    SomeMethod();
-                }
-                catch (InvalidOperationException ex) {
-                    throw new NullReferenceExecption();
-                }
-            }
-            catch (Exception ex) {
-                throw;
-            }
-        }
-
-        private void SomeMethod() {
-            throw new InvalidOperationException();
-        }
-    }
-}",
-@"using System;
-
-namespace A
-{
-    // B.Method throws NullReferenceExecption
-}
-");
+CodeHelper.CreateException(1, "NullReferenceException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.NullReferenceException"));
     }
 }

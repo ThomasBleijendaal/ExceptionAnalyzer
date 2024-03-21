@@ -9,7 +9,7 @@ public class BasicThrows
     public void Throw()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -19,30 +19,38 @@ namespace A {
         }
     }
 }",
-@"namespace ExceptionAnalyzer
-{
-    public partial class Exceptions
+CodeHelper.CreateException(1),
+CodeHelper.CreateMethodExceptions(exceptions: "System.Exception"));
+    }
+
+    [Test]
+    public void ThrowMultiple()
     {
-        partial void SetThrownExceptions()
-        {
-            Methods = new[]
-            {
-                new MethodExceptionInfo(typeof(A.B), ""Method"", new[]
-                {
-                    new ThrownExceptionInfo(typeof(System.Exception), new System.Exception()),
-                })
-            };
+        GeneratorTestHelper.TestGeneratedCode(@"using System;
+using ExceptionAnalyzer;
+
+namespace A {
+    public class B {
+        [AddExceptions]
+        public void Method() {
+            if (false == true) {
+                throw new InvalidOperationException();
+            } else {
+                throw new Exception();
+            }
         }
     }
-}
-");
+}",
+CodeHelper.CreateException(1, "InvalidOperationException"),
+CodeHelper.CreateException(2),
+CodeHelper.CreateMethodExceptions(exceptions: new[] { "System.InvalidOperationException", "System.Exception" }));
     }
 
     [Test]
     public void ThrowIf()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -54,20 +62,15 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws Exception
-}
-");
+CodeHelper.CreateException(1),
+CodeHelper.CreateMethodExceptions(exceptions: "System.Exception"));
     }
 
     [Test]
     public void ThrowIfs()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -82,20 +85,16 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws InvalidOperationException, NotSupportedException
-}
-");
+CodeHelper.CreateException(1, "InvalidOperationException"),
+CodeHelper.CreateException(2, "NotSupportedException"),
+CodeHelper.CreateMethodExceptions(exceptions: new[] { "System.InvalidOperationException", "System.NotSupportedException" }));
     }
 
     [Test]
     public void ThrowTernary()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -105,20 +104,15 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws Exception
-}
-");
+CodeHelper.CreateException(1),
+CodeHelper.CreateMethodExceptions(exceptions: "System.Exception"));
     }
 
     [Test]
     public void ThrowNull()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -128,20 +122,15 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws Exception
-}
-");
+CodeHelper.CreateException(1),
+CodeHelper.CreateMethodExceptions(exceptions: "System.Exception"));
     }
 
     [Test]
     public void ThrowVariable()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -152,20 +141,14 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws Exception
-}
-");
+CodeHelper.CreateMethodExceptionsWithoutCreateException(exceptions: "System.Exception"));
     }
 
     [Test]
     public void ThrowTernaryVariable()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -176,20 +159,14 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws Exception
-}
-");
+CodeHelper.CreateMethodExceptionsWithoutCreateException(exceptions: "System.Exception"));
     }
 
     [Test]
     public void ThrowCatch()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -209,7 +186,7 @@ namespace A {
     public void ThrowCatchRethrow()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -224,20 +201,66 @@ namespace A {
         }
     }
 }",
-@"using System;
+CodeHelper.CreateException(1),
+CodeHelper.CreateMethodExceptions(exceptions: "System.Exception"));
+    }
 
-namespace A
-{
-    // B.Method throws Exception
-}
-");
+    [Test]
+    public void ThrowCatchWithoutVariableRethrow()
+    {
+        GeneratorTestHelper.TestGeneratedCode(@"using System;
+using ExceptionAnalyzer;
+
+namespace A {
+    public class B {
+        [AddExceptions]
+        public void Method() {
+            try {
+                throw new InvalidOperationException();
+            }
+            catch (Exception) {
+                throw;
+            }
+        }
+    }
+}",
+CodeHelper.CreateException(1, "InvalidOperationException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.InvalidOperationException"));
+    }
+
+    [Test]
+    public void ThrowCatchRethrowMultiple()
+    {
+        GeneratorTestHelper.TestGeneratedCode(@"using System;
+using ExceptionAnalyzer;
+
+namespace A {
+    public class B {
+        [AddExceptions]
+        public void Method() {
+            try {
+                if (false == true) {
+                    throw new InvalidOperationException();
+                } else {
+                    throw new Exception();
+                }
+            }
+            catch (Exception ex) {
+                throw;
+            }
+        }
+    }
+}",
+CodeHelper.CreateException(1, "InvalidOperationException"),
+CodeHelper.CreateException(2),
+CodeHelper.CreateMethodExceptions(exceptions: new[] { "System.InvalidOperationException", "System.Exception" }));
     }
 
     [Test]
     public void ThrowCatchNewThrow()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -252,20 +275,15 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws InvalidOperationException
-}
-");
+CodeHelper.CreateException(1, "InvalidOperationException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.InvalidOperationException"));
     }
 
     [Test]
     public void ThrowCatchThrow()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -280,20 +298,40 @@ namespace A {
         }
     }
 }",
-@"using System;
+CodeHelper.CreateMethodExceptionsWithoutCreateException(exceptions: "System.Exception"));
+    }
 
-namespace A
-{
-    // B.Method throws Exception
-}
-");
+    [Test]
+    public void ThrowCatchThrowMultiple()
+    {
+        GeneratorTestHelper.TestGeneratedCode(@"using System;
+using ExceptionAnalyzer;
+
+namespace A {
+    public class B {
+        [AddExceptions]
+        public void Method() {
+            try {
+                if (false == true) {
+                    throw new InvalidOperationException();
+                } else {
+                    throw new Exception();
+                }
+            }
+            catch (Exception ex) {
+                throw ex;
+            }
+        }
+    }
+}",
+CodeHelper.CreateMethodExceptionsWithoutCreateException(exceptions: new[] { "System.Exception" }));
     }
 
     [Test]
     public void ThrowCatchNestedNewThrow()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -313,20 +351,15 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws NotSupportedException
-}
-");
+CodeHelper.CreateException(1, "NotSupportedException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.NotSupportedException"));
     }
 
     [Test]
     public void ThrowCatchNestedNoTypes()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
-using OpenApiGenerator;
+using ExceptionAnalyzer;
 
 namespace A {
     public class B {
@@ -351,12 +384,7 @@ namespace A {
         }
     }
 }",
-@"using System;
-
-namespace A
-{
-    // B.Method throws InvalidOperationException
-}
-");
+CodeHelper.CreateException(1, "InvalidOperationException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.InvalidOperationException"));
     }
 }
