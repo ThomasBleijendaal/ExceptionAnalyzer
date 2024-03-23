@@ -9,6 +9,7 @@ namespace ExceptionAnalyzer;
  * 
  * V Support overloads
  * - Support generic overloads
+ * - Support generic types
  * V Support lambdas
  * 1/2 Support properties
  * V Support local functions

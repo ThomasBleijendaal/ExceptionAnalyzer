@@ -387,4 +387,98 @@ namespace A {
 CodeHelper.CreateException(1, "InvalidOperationException"),
 CodeHelper.CreateMethodExceptions(exceptions: "System.InvalidOperationException"));
     }
+
+    [Test]
+    public void ThrowCatchNestedCatch()
+    {
+        GeneratorTestHelper.TestGeneratedCode(@"using System;
+using ExceptionAnalyzer;
+
+namespace A {
+    public class B {
+        [AddExceptions]
+        public void Method() {
+            try {
+                throw new Exception();
+            }
+            catch {
+                try {
+                    try {
+                        throw;
+                    }
+                    catch {
+                        throw;
+                    }
+                }
+                catch {
+                    throw;
+                }
+            }
+        }
+    }
+}",
+CodeHelper.CreateException(1, "Exception"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.Exception"));
+    }
+
+    [Test]
+    public void ThrowCatchNestedCatchAndThrow()
+    {
+        GeneratorTestHelper.TestGeneratedCode(@"using System;
+using ExceptionAnalyzer;
+
+namespace A {
+    public class B {
+        [AddExceptions]
+        public void Method() {
+            try {
+                throw new Exception();
+            }
+            catch {
+                try {
+                    throw new InvalidOperationException();
+                }
+                catch {
+                    throw;
+                }
+            }
+        }
+    }
+}",
+CodeHelper.CreateException(1, "InvalidOperationException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.InvalidOperationException"));
+    }
+
+    [Test] // TODO: the Exception insnt put in to the deep throw, making it do incorrect stuff
+    public void ThrowCatchNestedCatchAndThrow2()
+    {
+        GeneratorTestHelper.TestGeneratedCode(@"using System;
+using ExceptionAnalyzer;
+
+namespace A {
+    public class B {
+        [AddExceptions]
+        public void Method() {
+            try {
+                throw new Exception();
+            }
+            catch {
+                try {
+                    try {
+                        throw;
+                    }
+                    catch (Exception) {
+                        throw new InvalidOperationException();
+                    }
+                }
+                catch {
+                    throw;
+                }
+            }
+        }
+    }
+}",
+CodeHelper.CreateException(1, "InvalidOperationException"),
+CodeHelper.CreateMethodExceptions(exceptions: "System.InvalidOperationException"));
+    }
 }

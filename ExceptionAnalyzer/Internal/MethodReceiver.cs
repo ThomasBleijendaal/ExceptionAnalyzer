@@ -11,8 +11,6 @@ internal sealed class MethodReceiver : ISyntaxReceiver
 
     public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
     {
-        Console.WriteLine(syntaxNode.GetType().Name);
-
         if (syntaxNode is MethodDeclarationSyntax methodDeclaration)
         {
             if (methodDeclaration.AttributeLists.Any(x => x.Attributes.Any(y => y.Name.ToString().Contains("AddExceptions"))))

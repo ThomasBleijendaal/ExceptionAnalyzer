@@ -6,6 +6,11 @@ internal class BlockInfo
     {
     }
 
+    public BlockInfo(IReadOnlyList<ExceptionInfo> thrownExceptions) : this(new(), new(), new())
+    {
+        ThrownExceptions.AddRange(thrownExceptions);
+    }
+
     public BlockInfo(List<ExceptionInfo> thrownExceptions, List<BlockInfo> blocks, List<CatchInfo> catchInfos)
     {
         ThrownExceptions = thrownExceptions ?? throw new ArgumentNullException(nameof(thrownExceptions));

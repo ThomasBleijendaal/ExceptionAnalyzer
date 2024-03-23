@@ -38,6 +38,12 @@ public static class GeneratorTestHelper
     {
         var (diagnostics, output) = GetGeneratedOutput(sourceText);
 
+        foreach (var file in output)
+        {
+            Console.WriteLine(file);
+            Console.WriteLine("-----------");
+        }
+
         Assert.AreEqual(0, diagnostics.Length, string.Join(", ", diagnostics.Select(x => x.GetMessage())));
 
         expectedOutputSourceTexts = expectedOutputSourceTexts.ToArray();

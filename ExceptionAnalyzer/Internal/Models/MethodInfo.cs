@@ -15,6 +15,7 @@ internal class MethodInfo
     public ISymbol Symbol { get; }
     public string MethodName { get; }
     public IReadOnlyList<ITypeSymbol?> ArgumentTypes { get; }
+
     public BlockInfo Block { get; }
 
     public bool HasAnnotation { get; set; }

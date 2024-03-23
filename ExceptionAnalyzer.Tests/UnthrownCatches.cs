@@ -31,6 +31,60 @@ CodeHelper.CreateMethodExceptions(exceptions: new[] { "System.NullReferenceExcep
     }
 
     [Test]
+    public void ThrowFromCatchWithUsedAndUnusedCatchException()
+    {
+        GeneratorTestHelper.TestGeneratedCode(@"using System;
+using ExceptionAnalyzer;
+
+namespace A {
+    public class B {
+        [AddExceptions]
+        public void Method() {
+            try {
+                throw new Exception();
+            }
+            catch (NotSupportedException ex) {
+                throw new NullReferenceException();
+            }
+            catch (Exception ex) {
+                throw new InvalidOperationException();
+            }
+        }
+    }
+}",
+CodeHelper.CreateException(1, "NullReferenceException"),
+CodeHelper.CreateException(2, "InvalidOperationException"),
+CodeHelper.CreateMethodExceptions(exceptions: new[] { "System.NullReferenceException", "System.InvalidOperationException" }));
+    }
+
+    [Test]
+    public void ThrowFromCatchWithUsedAndUnusedShortCatchException()
+    {
+        GeneratorTestHelper.TestGeneratedCode(@"using System;
+using ExceptionAnalyzer;
+
+namespace A {
+    public class B {
+        [AddExceptions]
+        public void Method() {
+            try {
+                throw new Exception();
+            }
+            catch (NotSupportedException) {
+                throw new NullReferenceException();
+            }
+            catch (Exception) {
+                throw new InvalidOperationException();
+            }
+        }
+    }
+}",
+CodeHelper.CreateException(1, "NullReferenceException"),
+CodeHelper.CreateException(2, "InvalidOperationException"),
+CodeHelper.CreateMethodExceptions(exceptions: new[] { "System.NullReferenceException", "System.InvalidOperationException" }));
+    }
+
+    [Test]
     public void ThrowFromCatchWithUnusedCatchRethrowException()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;
