@@ -10,6 +10,8 @@ namespace ExceptionAnalyzer;
  * V Support overloads
  * - Support generic overloads
  * - Support generic types
+ * - Async
+ * - Global scope
  * V Support lambdas
  * 1/2 Support properties
  * V Support local functions
@@ -30,6 +32,7 @@ namespace ExceptionAnalyzer;
  * - Export all exception details (initializer etc)
  * - Fallback when exception creation uses variable (just insert default / null)
  * - Global usings
+ * - Detect cycle
  * 
  * PLAN
  * 
@@ -38,6 +41,11 @@ namespace ExceptionAnalyzer;
  * - Allow using this method in like DocumentFilters for OpenApi stuff
  * - Make stuff structs and lower memory pressure
  * - Make parsing enabled by build flag so it only tanks performance when wanted
+ * 
+ * DEBT
+ * 
+ * - Codegen should be using roslyn features and not a whole lot of string concats
+ * 
  */
 
 [Generator]

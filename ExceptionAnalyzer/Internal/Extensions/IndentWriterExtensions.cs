@@ -6,9 +6,10 @@ public static class IndentWriterExtensions
 {
     public static IDisposable NoIndent(this IndentedTextWriter indentWriter) => new IndentNothing();
     public static IDisposable Indent(this IndentedTextWriter indentWriter) => new IndentDisposable(indentWriter);
-    public static IDisposable Braces(this IndentedTextWriter indentWriter) => new IndentDisposable(indentWriter, "{", "}");
-    public static IDisposable BracesWithSemiColon(this IndentedTextWriter indentWriter) => new IndentDisposable(indentWriter, "{", "};");
-    public static IDisposable BracesWithComma(this IndentedTextWriter indentWriter) => new IndentDisposable(indentWriter, "{", "},");
+    public static IDisposable Braces(this IndentedTextWriter indentWriter) => indentWriter.Braces("");
+    public static IDisposable BracesWithSemiColon(this IndentedTextWriter indentWriter) => indentWriter.Braces(";");
+    public static IDisposable BracesWithComma(this IndentedTextWriter indentWriter) => indentWriter.Braces(",");
+    public static IDisposable Braces(this IndentedTextWriter indentWriter, string extra) => new IndentDisposable(indentWriter, "{", $"}}{extra}");
 
     private class IndentDisposable : IDisposable
     {

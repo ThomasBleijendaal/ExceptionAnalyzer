@@ -30,25 +30,25 @@ internal sealed class SourceBuilder
         indentWriter.WriteLine($"namespace {nameof(ExceptionAnalyzer)}");
         using (indentWriter.Braces())
         {
-            indentWriter.WriteLine($"public partial class {nameof(Exceptions)}");
+            indentWriter.WriteLine("public partial class Exceptions");
             using (indentWriter.Braces())
             {
-                indentWriter.WriteLine($"partial void SetThrownExceptions()");
+                indentWriter.WriteLine("partial void SetThrownExceptions()");
                 using (indentWriter.Braces())
                 {
-                    indentWriter.WriteLine($"Methods = new[]");
+                    indentWriter.WriteLine($"_methods = new[]");
                     using (indentWriter.BracesWithSemiColon())
                     {
                         foreach (var method in _methods)
                         {
-                            indentWriter.Write($"new MethodExceptionInfo(");
+                            indentWriter.Write("new MethodExceptionInfo(");
                             indentWriter.Write($"typeof({method.Symbol.ToDisplayString()}), ");
                             indentWriter.WriteLine($"\"{method.MethodName}\", new[]");
-                            using (indentWriter.BracesWithComma())
+                            using (indentWriter.Braces("),"))
                             {
                                 foreach (var exception in method.Block.ThrownExceptions.Where(x => x.Type != null))
                                 {
-                                    indentWriter.Write($"new ThrownExceptionInfo(");
+                                    indentWriter.Write("new ThrownExceptionInfo(");
                                     indentWriter.Write($"typeof({exception.Type!.ToDisplayString()}), ");
                                     if (string.IsNullOrEmpty(exception.ExceptionCreation))
                                     {

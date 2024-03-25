@@ -50,7 +50,7 @@ namespace ExceptionAnalyzer.Exception{index}
                 new MethodExceptionInfo(typeof({@namespace}), ""{method}"", new[]
                 {{
                     {exceptionString}
-                }},
+                }}),
             }};
         }}
     }}

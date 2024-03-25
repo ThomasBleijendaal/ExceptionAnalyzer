@@ -5,6 +5,18 @@
     <LangVersion>12.0</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Thomas Bleijendaal</Authors>
+    <Company>Thomas Bleijendaal</Company>
+    <Product>Generated Mapper</Product>
+    <Description>Exception analyzer that finds all thrown exceptions for attributed methods and their dependencies</Description>
+    <PackageProjectUrl>https://github.com/ThomasBleijendaal/ExceptionAnalyzer</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ThomasBleijendaal/ExceptionAnalyzer</RepositoryUrl>
+    <RepositoryType>Github</RepositoryType>
+    <PackageTags>C# compile-time exception analyzer</PackageTags>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <PackageVersion>$(PackageVersion)</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,6 +34,13 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="ExceptionAnalyzer.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -5,6 +5,8 @@ namespace ExceptionAnalyzer.Tests;
 
 public class ExceptionCreationTests
 {
+    // TODO: convert to code helper
+
     [Test]
     public void ThrowMultiple()
     {
@@ -62,7 +64,7 @@ namespace ExceptionAnalyzer.Exception2
                 {
                     new ThrownExceptionInfo(typeof(System.Exception), ExceptionAnalyzer.Exception1.ExceptionCreator.Create()),
                     new ThrownExceptionInfo(typeof(System.Exception), ExceptionAnalyzer.Exception2.ExceptionCreator.Create()),
-                },
+                }),
             };
         }
     }
@@ -111,7 +113,7 @@ namespace ExceptionAnalyzer.Exception1
                 new MethodExceptionInfo(typeof(A.B), ""Method"", new[]
                 {
                     new ThrownExceptionInfo(typeof(System.Exception), ExceptionAnalyzer.Exception1.ExceptionCreator.Create()),
-                },
+                }),
             };
         }
     }
@@ -162,7 +164,7 @@ namespace ExceptionAnalyzer.Exception1
                 new MethodExceptionInfo(typeof(A.Q.B), ""Method"", new[]
                 {
                     new ThrownExceptionInfo(typeof(System.Exception), ExceptionAnalyzer.Exception1.ExceptionCreator.Create()),
-                },
+                }),
             };
         }
     }
