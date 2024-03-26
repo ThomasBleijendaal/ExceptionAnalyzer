@@ -450,7 +450,7 @@ CodeHelper.CreateMethodExceptions(exceptions: "System.InvalidOperationException"
     }
 
     [Ignore("The code is still too stupid")]
-    [Test] // TODO: the Exception insnt put in to the deep throw, making it do incorrect stuff
+    [Test] // TODO: the Exception isn't put in to the deep throw, making it do incorrect stuff
     public void ThrowCatchNestedCatchAndThrow2()
     {
         GeneratorTestHelper.TestGeneratedCode(@"using System;

@@ -146,18 +146,34 @@ internal sealed class ThrowExceptionVisitor : CSharpSyntaxWalker
     {
         if (expression is ObjectCreationExpressionSyntax createExceptionStatement)
         {
-            var usingVisitor = new UsingDirectiveVisitor();
+            var model = _compilation.GetSemanticModel(createExceptionStatement.SyntaxTree);
 
             var root = createExceptionStatement.SyntaxTree.GetCompilationUnitRoot();
 
+            var usingVisitor = new UsingDirectiveVisitor(model);
             root.Accept(usingVisitor);
 
-            var model = _compilation.GetSemanticModel(createExceptionStatement.SyntaxTree);
             var type = model.GetTypeInfo(createExceptionStatement);
+
+            List<VariableInfo>? variables = null;
+
+            if (createExceptionStatement.ArgumentList != null)
+            {
+                var variableVisitor = new ObjectCreationVisitor(model);
+
+                createExceptionStatement.Accept(variableVisitor);
+
+                variables = variableVisitor.Variables;
+            }
 
             if (type.Type != null)
             {
-                Blocks.Peek().ThrownExceptions.Add(new ExceptionInfo(type.Type, createExceptionStatement.ToString(), usingVisitor.NamespacesDirectives));
+                Blocks.Peek().ThrownExceptions.Add(
+                    new ExceptionInfo(
+                        type.Type,
+                        createExceptionStatement.ToString(),
+                        usingVisitor.NamespacesDirectives,
+                        variables));
             }
         }
     }
@@ -179,7 +195,7 @@ internal sealed class ThrowExceptionVisitor : CSharpSyntaxWalker
 
             if (type.Type != null)
             {
-                return new ExceptionInfo(type.Type, null, null);
+                return new ExceptionInfo(type.Type, null, null, null);
             }
         }
 

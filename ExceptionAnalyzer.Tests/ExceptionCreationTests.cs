@@ -5,170 +5,148 @@ namespace ExceptionAnalyzer.Tests;
 
 public class ExceptionCreationTests
 {
-    // TODO: convert to code helper
-
     [Test]
     public void ThrowMultiple()
     {
-        GeneratorTestHelper.TestGeneratedCode(@"using System;
-using ExceptionAnalyzer;
+        GeneratorTestHelper.TestGeneratedCode("""
+            using System;
+            using ExceptionAnalyzer;
 
-namespace A {
-    public class B {
-        [AddExceptions]
-        public void Method() {
-            throw new Exception();
-            throw new Exception(""Message"");
-        }
-    }
-}",
-@"using System;
-using ExceptionAnalyzer;
-using A;
-
-namespace ExceptionAnalyzer.Exception1
-{
-    public static class ExceptionCreator
-    {
-        public static Exception Create()
-        {
-            return new Exception();
-        }
-    }
-}
-",
-@"using System;
-using ExceptionAnalyzer;
-using A;
-
-namespace ExceptionAnalyzer.Exception2
-{
-    public static class ExceptionCreator
-    {
-        public static Exception Create()
-        {
-            return new Exception(""Message"");
-        }
-    }
-}
-",
-@"namespace ExceptionAnalyzer
-{
-    public partial class Exceptions
-    {
-        partial void SetThrownExceptions()
-        {
-            Methods = new[]
-            {
-                new MethodExceptionInfo(typeof(A.B), ""Method"", new[]
-                {
-                    new ThrownExceptionInfo(typeof(System.Exception), ExceptionAnalyzer.Exception1.ExceptionCreator.Create()),
-                    new ThrownExceptionInfo(typeof(System.Exception), ExceptionAnalyzer.Exception2.ExceptionCreator.Create()),
-                }),
-            };
-        }
-    }
-}
-");
+            namespace A {
+                public class B {
+                    [AddExceptions]
+                    public void Method() {
+                        throw new Exception();
+                        throw new Exception("Message");
+                    }
+                }
+            }
+            """,
+            CodeHelper.CreateExceptionCreation(1, ["return new Exception();"]),
+            CodeHelper.CreateExceptionCreation(2, ["return new Exception(\"Message\");"]),
+            CodeHelper.CreateMethodExceptions(exceptions: new[] { "System.Exception", "System.Exception" }));
     }
 
     [Test]
     public void ThrowWithConstants()
     {
-        GeneratorTestHelper.TestGeneratedCode(@"using System;
-using ExceptionAnalyzer;
+        GeneratorTestHelper.TestGeneratedCode("""
+            using System;
+            using ExceptionAnalyzer;
 
-namespace A {
-    public class Constant { public const string Message = ""Message"" }
-    public class B {
-        [AddExceptions]
-        public void Method() {
-            throw new Exception(Constant.Message);
-        }
-    }
-}",
-@"using System;
-using ExceptionAnalyzer;
-using A;
-
-namespace ExceptionAnalyzer.Exception1
-{
-    public static class ExceptionCreator
-    {
-        public static Exception Create()
-        {
-            return new Exception(Constant.Message);
-        }
-    }
-}
-",
-@"namespace ExceptionAnalyzer
-{
-    public partial class Exceptions
-    {
-        partial void SetThrownExceptions()
-        {
-            Methods = new[]
-            {
-                new MethodExceptionInfo(typeof(A.B), ""Method"", new[]
-                {
-                    new ThrownExceptionInfo(typeof(System.Exception), ExceptionAnalyzer.Exception1.ExceptionCreator.Create()),
-                }),
-            };
-        }
-    }
-}
-");
+            namespace A {
+                public class Constant { public const string Message = "Message" }
+                public class B {
+                    [AddExceptions]
+                    public void Method() {
+                        throw new Exception(Constant.Message);
+                    }
+                }
+            }
+            """,
+            CodeHelper.CreateExceptionCreation(1, ["return new Exception(Constant.Message);"]),
+            CodeHelper.CreateMethodExceptions(exceptions: "System.Exception"));
     }
 
     [Test]
     public void ThrowWithNestedNamespace()
     {
-        GeneratorTestHelper.TestGeneratedCode(@"using System;
-using ExceptionAnalyzer;
+        GeneratorTestHelper.TestGeneratedCode("""
+            using System;
+            using ExceptionAnalyzer;
 
-namespace A {
-    namespace Q {
-        public class Constant { public const string Message = ""Message"" }
-        public class B {
-            [AddExceptions]
-            public void Method() {
-                throw new Exception(Constant.Message);
+            namespace A {
+                namespace Q {
+                    public class Constant { public const string Message = "Message" }
+                    public class B {
+                        [AddExceptions]
+                        public void Method() {
+                            throw new Exception(Constant.Message);
+                        }
+                    }
+                }
             }
-        }
+            """,
+            CodeHelper.CreateExceptionCreation(1, ["return new Exception(Constant.Message);"], "A.Q"),
+            CodeHelper.CreateMethodExceptions("A.Q.B", exceptions: "System.Exception"));
     }
-}",
-@"using System;
-using ExceptionAnalyzer;
-using A.Q;
 
-namespace ExceptionAnalyzer.Exception1
-{
-    public static class ExceptionCreator
+    [Test]
+    public void ThrowWithVariable()
     {
-        public static Exception Create()
-        {
-            return new Exception(Constant.Message);
-        }
+        GeneratorTestHelper.TestGeneratedCode("""
+            using System;
+            using ExceptionAnalyzer;
+
+            namespace A {
+                public class B {
+                    [AddExceptions]
+                    public void Method() {
+                        try {
+                            throw new Exception(Constant.Message);
+                        }
+                        catch (Exception ex) {
+                            throw new InvalidOperationException("Bork", ex);
+                        }
+                    }
+                }
+            }
+            """,
+            CodeHelper.CreateExceptionCreation(1, [
+                "System.Exception ex = default!;",
+                "return new InvalidOperationException(\"Bork\", ex);"
+            ]),
+            CodeHelper.CreateMethodExceptions(exceptions: "System.InvalidOperationException"));
     }
-}
-",
-@"namespace ExceptionAnalyzer
-{
-    public partial class Exceptions
+
+    [Test]
+    public void ThrowWithStructVariable()
     {
-        partial void SetThrownExceptions()
-        {
-            Methods = new[]
-            {
-                new MethodExceptionInfo(typeof(A.Q.B), ""Method"", new[]
-                {
-                    new ThrownExceptionInfo(typeof(System.Exception), ExceptionAnalyzer.Exception1.ExceptionCreator.Create()),
-                }),
-            };
-        }
+        GeneratorTestHelper.TestGeneratedCode("""
+            using System;
+            using ExceptionAnalyzer;
+
+            namespace A {
+                public class B {
+                    [AddExceptions]
+                    public void Method() {
+                        var i = 123;
+                        throw new CustomException(i);
+                    }
+                }
+
+                public class CustomException(int i) : Exception { }
+            }
+            """,
+            CodeHelper.CreateExceptionCreation(1, [
+                "int i = default!;",
+                "return new CustomException(i);"
+            ]),
+            CodeHelper.CreateMethodExceptions(exceptions: "A.CustomException"));
+    }
+
+    [Test]
+    public void ThrowWithFormatExpression()
+    {
+        GeneratorTestHelper.TestGeneratedCode("""
+            using System;
+            using ExceptionAnalyzer;
+
+            namespace A {
+                public class B {
+                    [AddExceptions]
+                    public void Method() {
+                        var i = 123;
+                        throw new InvalidOperationException($"Borked {i}");
+                    }
+                }
+            }
+            """,
+            CodeHelper.CreateExceptionCreation(1, [
+                "int i = default!;",
+                "return new InvalidOperationException($\"Borked {i}\");"
+            ]),
+            CodeHelper.CreateMethodExceptions(exceptions: "System.InvalidOperationException"));
     }
 }
-");
-    }
-}
+

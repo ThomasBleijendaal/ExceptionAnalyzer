@@ -73,8 +73,18 @@ internal sealed class SourceBuilder
                                             }
                                         }
 
-                                        exceptionIndentWriter.WriteLine($"using {method.Symbol.ContainingNamespace.ToDisplayString()};");
-                                        exceptionIndentWriter.WriteLine();
+                                        if (!method.Symbol.ContainingNamespace.IsGlobalNamespace)
+                                        {
+                                            exceptionIndentWriter.WriteLine($"using {method.Symbol.ContainingNamespace.ToDisplayString()};");
+                                            exceptionIndentWriter.WriteLine();
+                                        }
+                                        else
+                                        {
+                                            if (exception.UsingDirectives != null)
+                                            {
+                                                exceptionIndentWriter.WriteLine();
+                                            }
+                                        }
 
                                         exceptionIndentWriter.WriteLine($"namespace {nameof(ExceptionAnalyzer)}.{exceptionName}");
                                         using (exceptionIndentWriter.Braces())
@@ -85,6 +95,14 @@ internal sealed class SourceBuilder
                                                 exceptionIndentWriter.WriteLine("public static Exception Create()");
                                                 using (exceptionIndentWriter.Braces())
                                                 {
+                                                    if (exception.ConstructorVariables != null)
+                                                    {
+                                                        foreach (var variable in exception.ConstructorVariables)
+                                                        {
+                                                            exceptionIndentWriter.WriteLine($"{variable.Type.ToDisplayString()} {variable.Name} = default!;");
+                                                        }
+                                                    }
+
                                                     exceptionIndentWriter.Write("return ");
                                                     exceptionIndentWriter.Write(exception.ExceptionCreation);
                                                     exceptionIndentWriter.WriteLine(";");

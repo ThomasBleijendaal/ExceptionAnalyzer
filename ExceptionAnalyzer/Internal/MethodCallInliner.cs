@@ -5,31 +5,30 @@ using Microsoft.CodeAnalysis;
 
 namespace ExceptionAnalyzer.Internal;
 
-// TODO: name can be better
-internal sealed class HierarchyRealizer
+internal sealed class MethodCallInliner
 {
     private readonly IReadOnlyList<MethodInfo> _methodInfos;
 
     private readonly IReadOnlyList<InterfaceMethodInfo> _interfaceMethodInfos;
 
-    public HierarchyRealizer(IReadOnlyList<MethodInfo> methodInfos)
+    public MethodCallInliner(IReadOnlyList<MethodInfo> methodInfos)
     {
         _methodInfos = methodInfos;
         _interfaceMethodInfos = CalculateInterfaceMethods();
     }
 
-    public MethodInfo RealizeMethodCalls(MethodInfo methodInfo)
+    public MethodInfo InlineMethodCalls(MethodInfo methodInfo)
     {
-        var resolvedMethodCalls = new MethodInfo(methodInfo.Symbol, methodInfo.MethodName, methodInfo.ArgumentTypes, RealizeMethodCalls(methodInfo, methodInfo.Block));
+        var resolvedMethodCalls = new MethodInfo(methodInfo.Symbol, methodInfo.MethodName, methodInfo.ArgumentTypes, InlineMethodCalls(methodInfo, methodInfo.Block));
 
         return MethodInfoHelper.Flatten(resolvedMethodCalls);
     }
 
-    private BlockInfo RealizeMethodCalls(MethodInfo methodInfo, BlockInfo blockInfo)
+    private BlockInfo InlineMethodCalls(MethodInfo methodInfo, BlockInfo blockInfo)
     {
-        var catchInfos = blockInfo.CatchInfos.Select(@catch => RealizeMethodCalls(methodInfo, @catch)).ToList();
+        var catchInfos = blockInfo.CatchInfos.Select(@catch => InlineMethodCalls(methodInfo, @catch)).ToList();
 
-        var blockInfos = blockInfo.Blocks.Select(block => RealizeMethodCalls(methodInfo, block)).ToList();
+        var blockInfos = blockInfo.Blocks.Select(block => InlineMethodCalls(methodInfo, block)).ToList();
 
         foreach (var call in blockInfo.MethodCalls)
         {
@@ -46,7 +45,7 @@ internal sealed class HierarchyRealizer
             {
                 if (!foundInfo.IsInterfaceMethod)
                 {
-                    var flattened = RealizeMethodCalls(foundInfo, foundInfo.Block);
+                    var flattened = InlineMethodCalls(foundInfo, foundInfo.Block);
                     blockInfos.Add(flattened);
                 }
                 else
@@ -56,7 +55,7 @@ internal sealed class HierarchyRealizer
                     {
                         foreach (var implementorInfo in interfaceMethod.Implementors)
                         {
-                            var flattened = RealizeMethodCalls(implementorInfo, implementorInfo.Block);
+                            var flattened = InlineMethodCalls(implementorInfo, implementorInfo.Block);
                             blockInfos.Add(flattened);
                         }
                     }
@@ -67,9 +66,9 @@ internal sealed class HierarchyRealizer
         return new BlockInfo(blockInfo.ThrownExceptions, blockInfos, catchInfos);
     }
 
-    private CatchInfo RealizeMethodCalls(MethodInfo methodInfo, CatchInfo @catch)
+    private CatchInfo InlineMethodCalls(MethodInfo methodInfo, CatchInfo @catch)
     {
-        return new CatchInfo(@catch.CaughtException, RealizeMethodCalls(methodInfo, @catch.Block));
+        return new CatchInfo(@catch.CaughtException, InlineMethodCalls(methodInfo, @catch.Block));
     }
 
     private IReadOnlyList<InterfaceMethodInfo> CalculateInterfaceMethods()

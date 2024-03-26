@@ -5,7 +5,6 @@ namespace ExceptionAnalyzer.Internal.Helpers;
 
 internal static class ExceptionInfoHelper
 {
-    // TODO: this needs to filter duplicates
     public static IEnumerable<ExceptionInfo> Combine(IEnumerable<ExceptionInfo> thrownExceptions, ExceptionInfo originalThrownException)
     {
         foreach (var thrownException in thrownExceptions)
@@ -20,8 +19,6 @@ internal static class ExceptionInfoHelper
             }
         }
     }
-
-    // TODO: this needs to filter duplicates
 
     public static IEnumerable<ExceptionInfo> Combine(IEnumerable<ExceptionInfo> thrownExceptions, IEnumerable<CatchInfo> catches)
         => CombineExceptions(thrownExceptions, catches).Distinct();
@@ -46,15 +43,6 @@ internal static class ExceptionInfoHelper
                     foreach (var retrownException in Combine(@catch.Block.ThrownExceptions, exception))
                     {
                         yield return retrownException;
-
-                        //if (@catch.CaughtException == ExceptionInfo.All)
-                        //{
-                        //    yield return exception;
-                        //}
-                        //else
-                        //{
-                        //    yield return retrownException;
-                        //}
                     }
                 }
             }

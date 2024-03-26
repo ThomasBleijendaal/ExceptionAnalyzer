@@ -11,7 +11,10 @@ namespace ExceptionAnalyzer;
  * - Support generic overloads
  * - Support generic types
  * - Async
+ * V- Basic support
+ * -- Correct await throw
  * - Global scope
+ * - Static
  * V Support lambdas
  * 1/2 Support properties
  * V Support local functions
@@ -26,20 +29,22 @@ namespace ExceptionAnalyzer;
  * -- Implicitly defined method calls
  * -- Handle stuff like IDisposable method call that will trigger too many exceptions
  * -- Interfaces on interfaces
- * - Support exception origin detection
  * - Support output the reason of the exception (a la stack trace - but then explain where exception came from)
  * - Exception hierarchies
+ * -V Basic inheritance
+ * -- More?
+ * - When expression
  * - Export all exception details (initializer etc)
- * - Fallback when exception creation uses variable (just insert default / null)
+ * V Fallback when exception creation uses variable (just insert default / null)
  * - Global usings
  * - Detect cycle
  * 
  * PLAN
  * 
- * - Create a class somewhere with a partial method
- * - Populate that partial method with the exception data
+ * V Create a class somewhere with a partial method
+ * V Populate that partial method with the exception data
  * - Allow using this method in like DocumentFilters for OpenApi stuff
- * - Make stuff structs and lower memory pressure
+ * - Make stuff structs and lower memory pressure (measure first)
  * - Make parsing enabled by build flag so it only tanks performance when wanted
  * 
  * DEBT
@@ -62,11 +67,11 @@ public class ExceptionAnalyzerGenerator : ISourceGenerator
 
             var referenceData = foundProperties.Concat(foundMethods).ToList();
 
-            var realizer = new HierarchyRealizer(referenceData);
+            var inliner = new MethodCallInliner(referenceData);
 
             var filteredMethods = foundMethods
                 .Where(x => x.HasAnnotation)
-                .Select(realizer.RealizeMethodCalls)
+                .Select(inliner.InlineMethodCalls)
                 .Where(x => x.Block.ThrownExceptions.Count > 0)
                 .ToList();
 
