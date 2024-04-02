@@ -18,5 +18,6 @@ internal class CallInfo : IEquatable<CallInfo>
 
     public bool Equals(CallInfo other) =>
         SymbolEqualityComparer.Default.Equals(Symbol, other.Symbol) &&
+        MethodName == other.MethodName &&
         ArgumentTypes.AreEqual(other.ArgumentTypes);
 }

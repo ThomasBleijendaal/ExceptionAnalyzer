@@ -126,6 +126,33 @@ public class ExceptionCreationTests
     }
 
     [Test]
+    public void ThrowWithException()
+    {
+        GeneratorTestHelper.TestGeneratedCode("""
+            using System;
+            using ExceptionAnalyzer;
+
+            namespace A {
+                public class B {
+                    [AddExceptions]
+                    public void Method() {
+                        try {
+                        }
+                        catch (Exception ex) {
+                            throw new InvalidOperationException("Bork", ex);
+                        }
+                    }
+                }
+            }
+            """,
+            CodeHelper.CreateExceptionCreation(1, [
+                "System.Exception ex = default!;",
+                "return new InvalidOperationException(\"Bork\", ex);"
+            ]),
+            CodeHelper.CreateMethodExceptions(exceptions: "System.InvalidOperationException"));
+    }
+
+    [Test]
     public void ThrowWithFormatExpression()
     {
         GeneratorTestHelper.TestGeneratedCode("""

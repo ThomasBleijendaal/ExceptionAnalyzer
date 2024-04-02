@@ -67,6 +67,14 @@ internal class ThisIsSomethingElse : ISomethingOther
 {
     public void Method()
     {
-        throw new NotImplementedException("3");
+        try
+        {
+            // nothing
+        }
+        catch (Exception ex)
+        {
+            var i = 0;
+            throw new InvalidOperationException($"Inner ex nr {i}", ex);
+        }
     }
 }

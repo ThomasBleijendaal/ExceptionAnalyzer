@@ -1,4 +1,5 @@
 ﻿using ExceptionAnalyzer.Internal;
+using ExceptionAnalyzer.Internal.Helpers;
 using ExceptionAnalyzer.Internal.Models;
 using Microsoft.CodeAnalysis;
 
@@ -66,12 +67,15 @@ public class ExceptionAnalyzerGenerator : ISourceGenerator
             var foundMethods = receiver.MethodCandidates.Select(parser.ParseMethod).OfType<MethodInfo>().ToList();
 
             var referenceData = foundProperties.Concat(foundMethods).ToList();
-
-            var inliner = new MethodCallInliner(referenceData);
+            var interfaceMethodInfo = MethodInfoHelper.CalculateInterfaceMethods(referenceData);
 
             var filteredMethods = foundMethods
                 .Where(x => x.HasAnnotation)
-                .Select(inliner.InlineMethodCalls)
+                .Select(method =>
+                {
+                    var inliner = new MethodCallInliner(referenceData, interfaceMethodInfo, method);
+                    return inliner.InlineMethodCalls();
+                })
                 .Where(x => x.Block.ThrownExceptions.Count > 0)
                 .ToList();
 

@@ -8,18 +8,30 @@ namespace ExceptionAnalyzer.Internal;
 internal sealed class MethodCallInliner
 {
     private readonly IReadOnlyList<MethodInfo> _methodInfos;
-
+    private readonly MethodInfo _methodToInline;
     private readonly IReadOnlyList<InterfaceMethodInfo> _interfaceMethodInfos;
 
-    public MethodCallInliner(IReadOnlyList<MethodInfo> methodInfos)
+    private readonly List<CallInfo> _processedCalls;
+
+    public MethodCallInliner(
+        IReadOnlyList<MethodInfo> methodInfos,
+        IReadOnlyList<InterfaceMethodInfo> interfaceMethodInfos,
+        MethodInfo methodToInline)
     {
         _methodInfos = methodInfos;
-        _interfaceMethodInfos = CalculateInterfaceMethods();
+        _methodToInline = methodToInline;
+        _interfaceMethodInfos = interfaceMethodInfos;
+
+        _processedCalls = new List<CallInfo>([new CallInfo(null, methodToInline.MethodName)]);
     }
 
-    public MethodInfo InlineMethodCalls(MethodInfo methodInfo)
+    public MethodInfo InlineMethodCalls()
     {
-        var resolvedMethodCalls = new MethodInfo(methodInfo.Symbol, methodInfo.MethodName, methodInfo.ArgumentTypes, InlineMethodCalls(methodInfo, methodInfo.Block));
+        var resolvedMethodCalls = new MethodInfo(
+            _methodToInline.Symbol,
+            _methodToInline.MethodName,
+            _methodToInline.ArgumentTypes,
+            InlineMethodCalls(_methodToInline, _methodToInline.Block));
 
         return MethodInfoHelper.Flatten(resolvedMethodCalls);
     }
@@ -32,6 +44,13 @@ internal sealed class MethodCallInliner
 
         foreach (var call in blockInfo.MethodCalls)
         {
+            if (_processedCalls.Contains(call))
+            {
+                continue;
+            }
+
+            _processedCalls.Add(call);
+
             // if the call.Symbol is null, its a call to a method / property on its own class
             var symbol = call.Symbol ?? methodInfo.Symbol;
             var methodName = call.MethodName;
@@ -69,36 +88,5 @@ internal sealed class MethodCallInliner
     private CatchInfo InlineMethodCalls(MethodInfo methodInfo, CatchInfo @catch)
     {
         return new CatchInfo(@catch.CaughtException, InlineMethodCalls(methodInfo, @catch.Block));
-    }
-
-    private IReadOnlyList<InterfaceMethodInfo> CalculateInterfaceMethods()
-    {
-        var methods = new List<InterfaceMethodInfo>();
-
-        foreach (var interfaceMethod in _methodInfos.Where(x => x.IsInterfaceMethod))
-        {
-            var implementors = _methodInfos.Where(method =>
-                method.Symbol is INamedTypeSymbol type &&
-                GetAllInterfaces(type).Any(@interface => SymbolEqualityComparer.Default.Equals(@interface, interfaceMethod.Symbol)) &&
-                interfaceMethod.MethodName == method.MethodName &&
-                interfaceMethod.ArgumentTypes.AreEqual(method.ArgumentTypes)).ToArray();
-
-            methods.Add(new InterfaceMethodInfo(interfaceMethod, implementors));
-        }
-
-        return methods;
-    }
-
-    private IEnumerable<INamedTypeSymbol> GetAllInterfaces(INamedTypeSymbol symbol)
-    {
-        foreach (var @interface in symbol.Interfaces)
-        {
-            yield return @interface;
-
-            foreach (var @interfaceInterface in GetAllInterfaces(@interface))
-            {
-                yield return interfaceInterface;
-            }
-        }
     }
 }
