@@ -16,7 +16,7 @@ jobs:
       with:
         dotnet-version: '8.0.x'
         include-prerelease: true
-    - name: Build Api Core
+    - name: Build
       run: dotnet build --configuration Release ./Faultr/Faultr.csproj
-    - name: Run Core Tests
+    - name: Run Tests
       run: dotnet test ./Faultr.Tests/Faultr.Tests.csproj
